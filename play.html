@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jogo de Futebol Top Down</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0b6623;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .scoreboard {
+      width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #111 0%, #222 50%, #111 100%);
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .scoreboard.premier {
+      border: 3px solid #fff;
+    }
+
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .team-name {
+      background: #fff;
+      color: #000;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .score {
+      min-width: 40px;
+      text-align: center;
+      background: #00e676;
+      color: #000;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 26px;
+    }
+
+    .divider {
+      color: #fff;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    canvas {
+      border: 4px solid #ffffff;
+      background: #1e8f3a;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="scoreboard premier">
+    <div class="team left">
+      <span class="team-name">P1</span>
+      <span class="score" id="score1">0</span>
+    </div>
+    <div class="divider">VS</div>
+    <div class="team right">
+      <span class="score" id="score2">0</span>
+      <span class="team-name">P2</span>
+    </div>
+  </div>
+  <canvas id="game" width="900" height="500"></canvas>
+</div>
+
+<script>
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const score1El = document.getElementById('score1');
+  const score2El = document.getElementById('score2');
+
+  const keys = {};
+  document.addEventListener('keydown', e => keys[e.key] = true);
+  document.addEventListener('keyup', e => keys[e.key] = false);
+
+  // reset da bola ao pressionar a tecla R
+  document.addEventListener('keydown', e => {
+    if (e.key === 'r' || e.key === 'R') {
+      resetBall();
+    }
+  });
+
+  const FIELD_MARGIN = 20;
+  const GOAL_WIDTH = 60;
+  const GOAL_HEIGHT = 120;
+
+  const player1 = { x: 200, y: 250, r: 12, color: '#ffffff', speed: 3, score: 0 };
+  const player2 = { x: 700, y: 250, r: 12, color: '#ff4444', speed: 3, score: 0 };
+
+  const ball = { x: 450, y: 250, r: 8, vx: 0, vy: 0, lastTouch: null };
+
+  function resetBall() {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.vx = 0;
+    ball.vy = 0;
+    ball.lastTouch = null;
+  }
+
+  function drawField() {
+    ctx.fillStyle = '#1e8f3a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(FIELD_MARGIN, FIELD_MARGIN, canvas.width - FIELD_MARGIN * 2, canvas.height - FIELD_MARGIN * 2);
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, FIELD_MARGIN);
+    ctx.lineTo(canvas.width / 2, canvas.height - FIELD_MARGIN);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeRect(FIELD_MARGIN, canvas.height / 2 - GOAL_HEIGHT / 2, GOAL_WIDTH, GOAL_HEIGHT);
+    ctx.strokeRect(canvas.width - FIELD_MARGIN - GOAL_WIDTH, canvas.height / 2 - GOAL_HEIGHT / 2, GOAL_WIDTH, GOAL_HEIGHT);
+  }
+
+  function drawCircle(obj) {
+    ctx.beginPath();
+    ctx.arc(obj.x, obj.y, obj.r, 0, Math.PI * 2);
+    ctx.fillStyle = obj.color;
+    ctx.fill();
+  }
+
+  function movePlayers() {
+    if (keys['w']) player1.y -= player1.speed;
+    if (keys['s']) player1.y += player1.speed;
+    if (keys['a']) player1.x -= player1.speed;
+    if (keys['d']) player1.x += player1.speed;
+
+    if (keys['ArrowUp']) player2.y -= player2.speed;
+    if (keys['ArrowDown']) player2.y += player2.speed;
+    if (keys['ArrowLeft']) player2.x -= player2.speed;
+    if (keys['ArrowRight']) player2.x += player2.speed;
+  }
+
+  function clampPlayer(p) {
+    p.x = Math.max(FIELD_MARGIN + p.r, Math.min(canvas.width - FIELD_MARGIN - p.r, p.x));
+    p.y = Math.max(FIELD_MARGIN + p.r, Math.min(canvas.height - FIELD_MARGIN - p.r, p.y));
+  }
+
+  function playerCollision(p1, p2) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dist = Math.hypot(dx, dy);
+    const minDist = p1.r + p2.r;
+
+    if (dist < minDist && dist > 0) {
+      const overlap = minDist - dist;
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      p1.x -= nx * overlap / 2;
+      p1.y -= ny * overlap / 2;
+      p2.x += nx * overlap / 2;
+      p2.y += ny * overlap / 2;
+    }
+  }
+
+  function ballCollision(player, id) {
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < ball.r + player.r && dist > 0) {
+      const nx = dx / dist;
+      const ny = dy / dist;
+      ball.vx = nx * 4;
+      ball.vy = ny * 4;
+      ball.lastTouch = id;
+    }
+  }
+
+  function updateBall() {
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    ball.vx *= 0.98;
+    ball.vy *= 0.98;
+
+    if (ball.y - ball.r <= FIELD_MARGIN || ball.y + ball.r >= canvas.height - FIELD_MARGIN) {
+      ball.vy *= -1;
+    }
+
+    const goalTop = canvas.height / 2 - GOAL_HEIGHT / 2;
+    const goalBottom = canvas.height / 2 + GOAL_HEIGHT / 2;
+
+    const outsideGoal = ball.y < goalTop || ball.y > goalBottom;
+
+    if (outsideGoal) {
+      if (ball.x - ball.r <= FIELD_MARGIN || ball.x + ball.r >= canvas.width - FIELD_MARGIN) {
+        ball.vx *= -1;
+      }
+    }
+  }
+
+  function checkGoal() {
+    const goalTop = canvas.height / 2 - GOAL_HEIGHT / 2;
+    const goalBottom = canvas.height / 2 + GOAL_HEIGHT / 2;
+
+    if (ball.y > goalTop && ball.y < goalBottom) {
+      if (ball.x - ball.r <= FIELD_MARGIN) {
+        if (ball.lastTouch === 2) {
+          player2.score++;
+          score2El.textContent = player2.score;
+        }
+        resetBall();
+      }
+      if (ball.x + ball.r >= canvas.width - FIELD_MARGIN) {
+        if (ball.lastTouch === 1) {
+          player1.score++;
+          score1El.textContent = player1.score;
+        }
+        resetBall();
+      }
+    }
+  }
+
+  function gameLoop() {
+    drawField();
+
+    movePlayers();
+    clampPlayer(player1);
+    clampPlayer(player2);
+
+    playerCollision(player1, player2);
+
+    ballCollision(player1, 1);
+    ballCollision(player2, 2);
+
+    updateBall();
+    checkGoal();
+
+    drawCircle(player1);
+    drawCircle(player2);
+    drawCircle({ ...ball, color: '#000000' });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  resetBall();
+  gameLoop();
+</script>
+
+</body>
+</html>
