@@ -14,11 +14,11 @@
             box-sizing: border-box;
         }
 
-        html{
+        html {
             height: 60vh;
         }
 
-        .play{
+        .play {
             border-radius: 50%;
             border: 5px solid #000;
             width: 100px;
@@ -30,7 +30,7 @@
             cursor: pointer;
         }
 
-        .play img{
+        .play img {
             width: 100px;
             height: 100px;
             margin: -5px -5px;
@@ -299,7 +299,9 @@
                 align-self: center;
             }
 
-            .right, .left, .center{
+            .right,
+            .left,
+            .center {
                 visibility: hidden;
             }
         }
@@ -333,34 +335,31 @@
             <!-- NOVA GRADE QUE FUNCIONA -->
             <div class="img-grid">
 
-                <div class="img-box"
-                    style="background-image: url('char.png');">
+                <div class="img-box" style="background-image: url('char.png');">
                     <div class="img-gradient"></div>
                     <span class="img-title">Personagem</span>
                 </div>
 
-                <div class="img-box"
-                    style="background-image: url('enemy.png');">
+                <div class="img-box" style="background-image: url('enemy.png');">
                     <div class="img-gradient"></div>
                     <span class="img-title">Inimigo</span>
                 </div>
 
-                <div class="img-box"
-                    style="background-image: url('background.png');">
+                <div class="img-box" style="background-image: url('background.png');">
                     <div class="img-gradient"></div>
                     <span class="img-title">Background</span>
                 </div>
 
-                <div class="img-box"
-                    style="background-image: url('tilemap.png');">
+                <div class="img-box" style="background-image: url('tilemap.png');">
                     <div class="img-gradient"></div>
                     <span class="img-title">tilemap</span>
-                </div>           </div>
+                </div>
+            </div>
 
             <button class="btn">Jogar agora</button>
-                <div class="play">
-                    <a href="play.html" target="_blank"><img src="transferir.png" alt="bola de futebol"></a>
-                </div>
+            <div class="play">
+                <a href="play.html" target="_blank"><img src="transferir.png" alt="bola de futebol"></a>
+            </div>
         </div>
         <div class="right"></div>
         <div class="center"></div>
@@ -393,6 +392,12 @@
             if (e.target === viewer) {
                 viewer.style.display = "none";
             }
+        });
+
+
+        //Inserir link
+        document.querySelector("button").addEventListener("click", () => {
+            window.open("https://google.com.br", "_blank");
         });
     </script>
 
