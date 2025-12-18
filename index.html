@@ -18,6 +18,32 @@
             height: 60vh;
         }
 
+        /* Modal */
+        .bg-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+        }
+
+        /* Imagem exibida no modal */
+        .bg-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 14px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+        }
+
+        /* Indica que é clicável */
+        .img-box {
+            cursor: pointer;
+        }
+
         .play {
             border-radius: 50%;
             border: 5px solid #000;
@@ -372,23 +398,28 @@
     </footer>
 
     <script>
-        /* MODAL COMPLETAMENTE FUNCIONAL */
-        const viewer = document.getElementById("viewer");
-        const viewerContent = document.getElementById("viewerContent");
+        document.querySelectorAll('.img-box').forEach(box => {
+            box.addEventListener('click', () => {
+                const bg = getComputedStyle(box).backgroundImage
 
-        document.querySelectorAll(".img-box").forEach(box => {
-            box.addEventListener("click", () => {
-                viewerContent.style.backgroundImage = box.style.backgroundImage;
-                viewer.style.display = "flex";
-            });
-        });
+                // Remove url("...")
+                const imageUrl = bg.slice(5, -2)
 
-        viewer.addEventListener("click", (e) => {
-            if (e.target === viewer) {
-                viewer.style.display = "none";
-            }
-        });
+                const modal = document.createElement('div')
+                modal.className = 'bg-modal'
 
+                const modalImg = document.createElement('img')
+                modalImg.src = imageUrl
+
+                modal.appendChild(modalImg)
+                document.body.appendChild(modal)
+
+                // Fecha ao clicar
+                modal.addEventListener('click', () => {
+                    modal.remove()
+                })
+            })
+        })
 
         //Inserir link
         document.querySelector("button").addEventListener("click", () => {
